@@ -1,0 +1,22 @@
+{
+  "name": "ktne-helper",
+  "version": "1.0.0",
+  "description": "A collection of useful utilities for the game \"Keep Talking and Nobody Explodes\".",
+  "main": "index.js",
+  "dependencies": {
+    "rx": "^4.1.0",
+    "inquirer": "^2.0.0",
+    "colors": "^1.1.2",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {},
+  "scripts": {},
+  "keywords": [
+    "helper",
+    "utility",
+    "collection",
+    "game"
+  ],
+  "author": "Michael Scott",
+  "license": "MIT"
+}
