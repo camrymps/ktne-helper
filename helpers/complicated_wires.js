@@ -1,170 +1,152 @@
 'use strict'
 
-/* Required modules */
-const _ = require('underscore'),
-    iq = require('inquirer'),
-    colors = require('colors'),
-    validators = require('../validators');
+// Required modules
+const _ = require('underscore')
+const iq = require('inquirer')
+require('colors')
 
-/* Dictionary of all possible wire properties */
+// Dictionary of all possible wire properties
 const dict = {
-    C: [
+  C: [  // Cut wire
         [true, false, true, false],
         [false, false, true, false],
-        [false, false, false, false],
-    ],
-    D: [
+        [false, false, false, false]
+  ],
+  D: [  // Do not cut wire
         [true, true, true, true],
         [false, true, true, false],
         [false, false, false, true]
-    ],
-    S: [
+  ],
+  S: [  // Cut if last digit of S/N is even
         [true, true, false, true],
         [true, true, false, false],
         [true, false, false, false],
         [false, true, false, false]
-    ],
-    P: [
+  ],
+  P: [  // Cut if there is a parallel port
         [true, true, true, false],
         [false, true, true, true],
         [false, true, false, true]
-    ],
-    B: [
+  ],
+  B: [  // Cut if there are 2 or more batteries
         [true, false, true, true],
         [true, false, false, true],
         [false, false, true, true]
-    ]
-};
-
-/**
- * Recursively prompts user for wire property selection n (wire count) times.
- * 
- * @param {number} wireCount Number of wires
- * @param {Object} envProps Environment properties (see 'run' method in module exports)
- */
-var sequence = function (wireCount, envProps) {
-    if (wireCount != 0) {
-        iq.prompt([{
-            type: 'checkbox',
-            name: 'props',
-            message: 'Select all wire properties:',
-            choices: [{
-                name: 'Red',
-                value: 1
-            }, {
-                name: 'Blue',
-                value: 2
-            }, {
-                name: 'Star (★)',
-                value: 3
-            }, {
-                name: 'LED on',
-                value: 4
-            }]
-        }]).then(function (wire) {
-            // This wire's properties
-            let wireProps = [
-                _.contains(wire.props, 1), // Red
-                _.contains(wire.props, 2), // Blue
-                _.contains(wire.props, 3), // ★
-                _.contains(wire.props, 4)  // LED
-            ];
-
-            // Find this wire's equivalent properties in dictionary and retrieve corresponding key
-            let matchedPropsKey = matchProps(wireProps);
-
-            // Evaluate properties
-            doLogic(matchedPropsKey, envProps);
-
-            // Call recursive method
-            sequence((wireCount - 1), envProps);
-        });
-    }
+  ]
 }
 
 /**
- * Finds equivalent wire properties in dictionary.
- *  
- * @param {Array} props The wire's properties
- * @return Dictionary key (C, D, S, P or B)
+ * Finds a wire's equivalent properties in dictionary and
+ * retrieves corresponding instruction letter.
+ *
+ * @param {Array} wireProps The wire's properties
+ * @return Instruction letter (C, D, S, P or B)
  */
-var matchProps = function (props) {
-    for (let key in dict) {
-        for (let i = 0; i < dict[key].length; i++) {
-            if (_.isEqual(dict[key][i], props)) return key;
+var getInstruction = function (wireProps) {
+  for (let key in dict) {
+    for (let i = 0; i < dict[key].length; i++) {
+      if (_.isEqual(dict[key][i], wireProps)) return key
+    }
+  }
+}
+
+/**
+ * Prints the decision.
+ *
+ * @param {Boolean} cut The decision (To cut or not to cut, that is the question)
+ */
+var out = function (cut) {
+  if (cut) console.log('Cut wire'.black.bgWhite)
+  else console.log('Do not cut wire'.black.bgWhite)
+}
+
+/**
+ * Evaluates bomb and wire properties and makes a decision.
+ *
+ * @param {string} wireProps The wire's properties
+ * @param {Object} envProps The bomb's properties
+ */
+var makeDecision = function (wireProps, bombProps) {
+  switch (getInstruction(wireProps)) {
+    case 'C':
+      out(true)
+      break
+    case 'D':
+      out(false)
+      break
+    case 'S':
+      if (bombProps.serialNumberLastDigit === 'even') out(true)
+      else out(false)
+      break
+    case 'P':
+      if (bombProps.parallelPort) out(true)
+      else out(false)
+      break
+    case 'B':
+      if (bombProps.batteryCount >= 2) out(true)
+      else out(false)
+      break
+  }
+}
+
+/**
+ * Recursively prompts user for wire properties.
+ *
+ * @param {Object} bombProps The bomb's properties
+ */
+var sequence = function (bombProps) {
+  iq.prompt([{
+    type: 'checkbox',
+    name: 'props',
+    message: 'Select all wire properties:',
+    choices: [{
+      name: 'Red',
+      value: 1
+    }, {
+      name: 'Blue',
+      value: 2
+    }, {
+      name: 'Star (★)',
+      value: 3
+    }, {
+      name: 'LED on',
+      value: 4
+    }]
+  }]).then(function (wire) {
+    makeDecision([
+      _.contains(wire.props, 1), // Red
+      _.contains(wire.props, 2), // Blue
+      _.contains(wire.props, 3), // ★
+      _.contains(wire.props, 4)  // LED
+    ], bombProps)
+
+    // Prompt user
+    iq.prompt([{
+      type: 'list',
+      name: 'anotherWire',
+      message: 'Another wire?',
+      choices: [
+        {
+          name: 'Yes',
+          value: true
+        },
+        {
+          name: 'No',
+          value: false
         }
-    }
-}
-
-/**
- * Prints output.
- * 
- * @param {Boolean} cut The decision
- */
-var out = function(cut) {
-    if (cut) console.log('Cut wire'.black.bgWhite);
-    else console.log('Do not cut wire'.black.bgWhite);
-}
-
-/**
- * Evaluates environment and wire properties and makes a decision.
- * 
- * @param {string} dictKey Key in the dictionary
- * @param {Object} envProps Environment properties
- */
-var doLogic = function(dictKey, envProps) {
-    switch(dictKey) {
-        case 'C':
-            out(true);
-            break;
-        case 'D':
-            out(false);
-            break;
-        case 'S':
-            if (envProps.S) out(true);
-            else out(false);
-            break;
-        case 'P':
-            if (envProps.P) out(true);
-            else out(false);
-            break;
-        case 'B':
-            if (envProps.B) out(true);
-            else out(false);
-            break;
-    }
+      ],
+      default: function() {
+        return true
+      }
+    }]).then(function (answer) {
+      if (answer.anotherWire) return sequence(bombProps)
+      else return
+    })
+  })
 }
 
 module.exports = {
-    run: function () {
-        iq.prompt([{
-            type: 'input',
-            name: 'wireCount',
-            message: 'Number of complicated wires:',
-            validate: validators.isNumber,
-            default: 1
-        }, {
-            type: 'checkbox',
-            name: 'props',
-            message: 'Select all that apply:',
-            choices: [{
-                name: 'Last digit of S/N is even',
-                value: 1
-            }, {
-                name: 'Has parallel port',
-                value: 2
-            }, {
-                name: 'Two or more batteries',
-                value: 3
-            }]
-        }]).then(function (env) {
-            sequence(
-                env.wireCount, {
-                    S: _.contains(env.props, 1), // Even S/N
-                    P: _.contains(env.props, 2), // Parallel port
-                    B: _.contains(env.props, 3)  // Two batteries
-                }
-            );
-        });
-    }
+  run: function (bombProps) {
+    sequence(bombProps)
+  }
 }
