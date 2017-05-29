@@ -23,7 +23,7 @@ A simple and easy-to-use command-line tool containing a collection of useful uti
 * The last digit of the bomb's serial number is even or odd
 * The bomb posseses or does not posses a parallel port:
 <br />
-![Parallel port](assets/parallel-port.png)
+(assets/parallel-port.png)
 * The number of batteries the bomb posseses
 
 ## [Helpers](#helpers)
