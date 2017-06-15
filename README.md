@@ -43,7 +43,7 @@ Selections can be made by pressing \<Space>. To select all, press \<a> and to de
 <br />
 [Underscore](http://underscorejs.org/) - Javascript helpers and utilities.
 
-## [Licence](#license)
+## [License](#license)
 <a name='license'></a>
 
 Copyright (c) 2016 Michael Scott.
